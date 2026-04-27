@@ -1,0 +1,216 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%lld min" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld min" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%lld 分钟" } }
+      }
+    },
+    "Active until %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Active until %@" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%@ 停止" } }
+      }
+    },
+    "All" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "All" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "全部" } }
+      }
+    },
+    "Cancel sleep timer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel sleep timer" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "取消定时" } }
+      }
+    },
+    "Close" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Close" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关闭" } }
+      }
+    },
+    "Continue listening" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Continue listening" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "继续听" } }
+      }
+    },
+    "Could not extract transcript" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Could not extract transcript" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "字幕提取失败" } }
+      }
+    },
+    "Downloads" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Downloads" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下载" } }
+      }
+    },
+    "Episodes you’ve started will appear here" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Episodes you’ve started will appear here" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "听过的内容会出现在这里" } }
+      }
+    },
+    "Favorites" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Favorites" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "收藏" } }
+      }
+    },
+    "History" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "History" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "历史" } }
+      }
+    },
+    "Home" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Home" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "首页" } }
+      }
+    },
+    "ListenKids" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "ListenKids" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "听吧" } }
+      }
+    },
+    "Long" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Long" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "长" } }
+      }
+    },
+    "Medium" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Medium" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "中" } }
+      }
+    },
+    "No downloads" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No downloads" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "还没下载" } }
+      }
+    },
+    "No episodes yet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No episodes yet" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "还没有内容" } }
+      }
+    },
+    "No favorites yet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No favorites yet" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "还没收藏" } }
+      }
+    },
+    "No history yet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No history yet" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "还没听过" } }
+      }
+    },
+    "No page URL for this episode" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No page URL for this episode" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "没有原始页面地址" } }
+      }
+    },
+    "Pull down to refresh" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pull down to refresh" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下拉刷新" } }
+      }
+    },
+    "Short" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Short" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "短" } }
+      }
+    },
+    "Sleep at %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sleep at %@" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%@ 自动停" } }
+      }
+    },
+    "Sleep timer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sleep timer" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "睡眠定时" } }
+      }
+    },
+    "Star" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Star" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "收藏" } }
+      }
+    },
+    "Swipe right on any episode to favorite" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Swipe right on any episode to favorite" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "向右滑一集即可收藏" } }
+      }
+    },
+    "Tap the download icon on any episode" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tap the download icon on any episode" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "点任意一集旁的下载图标" } }
+      }
+    },
+    "Transcript" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Transcript" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "字幕" } }
+      }
+    },
+    "Transcript not available" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Transcript not available" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "暂无字幕" } }
+      }
+    },
+    "Unstar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unstar" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "取消收藏" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}
