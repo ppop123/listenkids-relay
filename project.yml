@@ -18,7 +18,7 @@ settings:
     SWIFT_VERSION: "5.10"
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: 1
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: Q3827G6B8J
     SWIFT_STRICT_CONCURRENCY: minimal
 
 targets:
@@ -48,6 +48,8 @@ targets:
       properties:
         UIBackgroundModes:
           - audio
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
         CFBundleLocalizations:
           - en
           - zh-Hans

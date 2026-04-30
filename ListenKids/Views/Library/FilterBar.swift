@@ -9,7 +9,8 @@ struct FilterBar: View {
             HStack(spacing: 8) {
                 FilterChip(
                     label: "All",
-                    isSelected: level == nil && length == nil
+                    isSelected: level == nil && length == nil,
+                    tint: Color.accentColor
                 ) {
                     level = nil
                     length = nil
@@ -17,23 +18,24 @@ struct FilterBar: View {
                 ForEach(Level.allCases, id: \.self) { l in
                     FilterChip(
                         label: LocalizedStringKey(l.rawValue),
-                        isSelected: level == l
+                        isSelected: level == l,
+                        tint: l.tint
                     ) {
                         level = (level == l) ? nil : l
                     }
                 }
-                Divider().frame(height: 18)
-                FilterChip(label: "Short", isSelected: length == .short) {
+                Divider().frame(height: 18).padding(.horizontal, 4)
+                FilterChip(label: "Short", isSelected: length == .short, tint: .accentColor) {
                     length = (length == .short) ? nil : .short
                 }
-                FilterChip(label: "Medium", isSelected: length == .medium) {
+                FilterChip(label: "Medium", isSelected: length == .medium, tint: .accentColor) {
                     length = (length == .medium) ? nil : .medium
                 }
-                FilterChip(label: "Long", isSelected: length == .long) {
+                FilterChip(label: "Long", isSelected: length == .long, tint: .accentColor) {
                     length = (length == .long) ? nil : .long
                 }
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 18)
         }
     }
 }
@@ -41,17 +43,21 @@ struct FilterBar: View {
 private struct FilterChip: View {
     let label: LocalizedStringKey
     let isSelected: Bool
+    let tint: Color
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Text(label)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(isSelected ? Color.white : Color.primary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(isSelected ? Color.accentColor : Color.gray.opacity(0.15))
+                .font(.rounded(13, weight: .semibold))
+                .foregroundStyle(isSelected ? Color.white : Color.appInk)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(isSelected ? tint : Color.white.opacity(0.7))
                 .clipShape(Capsule())
+                .overlay(
+                    Capsule().stroke(Color.black.opacity(isSelected ? 0 : 0.06), lineWidth: 1)
+                )
         }
         .buttonStyle(.plain)
     }

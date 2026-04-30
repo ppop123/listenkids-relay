@@ -5,6 +5,9 @@ import SwiftData
 @MainActor
 @Observable
 final class PlayerEngine {
+    @MainActor static let shared = PlayerEngine()
+    private init() {}
+
     var currentTime: Double = 0
     var duration: Double = 0
     var isPlaying: Bool = false
@@ -28,15 +31,17 @@ final class PlayerEngine {
             return
         }
         if loadedEpisodeID == episode.id { return }
-        if let player, let timeObserver {
-            player.removeTimeObserver(timeObserver)
-        }
+
+        // Tear down any previously playing item so we never have two AVPlayers running.
+        teardown()
+
         loadedEpisodeID = episode.id
         episodeRef = episode
         contextRef = context
         currentTime = episode.playProgressSeconds
         duration = Double(episode.durationSeconds ?? 0)
         lastSaveTime = currentTime
+        isPlaying = false
 
         AudioSessionConfigurator.activate()
 
@@ -51,9 +56,7 @@ final class PlayerEngine {
                 if secs.isFinite, secs > 0 {
                     await MainActor.run { self?.duration = secs }
                 }
-            } catch {
-                // duration may already be set from itunes:duration; ignore
-            }
+            } catch {}
         }
 
         timeObserver = player.addPeriodicTimeObserver(
@@ -72,6 +75,23 @@ final class PlayerEngine {
 
         NowPlayingService.shared.bind(engine: self, episode: episode)
         play()
+    }
+
+    /// Stop and release the current AVPlayer; called when switching episodes.
+    private func teardown() {
+        if let player, let timeObserver {
+            player.removeTimeObserver(timeObserver)
+        }
+        player?.pause()
+        player = nil
+        timeObserver = nil
+        saveProgress()
+        cancelSleepTimer()
+        loadedEpisodeID = nil
+        episodeRef = nil
+        currentTime = 0
+        duration = 0
+        isPlaying = false
     }
 
     func play() {

@@ -4,105 +4,65 @@ import SwiftData
 struct PlayerView: View {
     let episode: Episode
     @Environment(\.modelContext) private var context
-    @State private var engine = PlayerEngine()
+    @State private var engine = PlayerEngine.shared
     @State private var modeStore = AppModeStore.shared
     @State private var showSleepTimer = false
-    @State private var showTranscript = false
+    @State private var showKaraoke = true
+    @State private var segments: [TranscriptSegment] = []
     @State private var loadingTranscript = false
-    @State private var transcriptError: String?
+    @State private var showReportConfirm = false
+
+    private var isBedtime: Bool { modeStore.current == .bedtime }
+    private var fg: Color { isBedtime ? .white : .appInk }
+    private var fgSoft: Color { isBedtime ? .white.opacity(0.65) : .appMuted }
 
     var body: some View {
-        VStack(spacing: 24) {
-            VStack(spacing: 12) {
-                Image(systemName: "headphones.circle.fill")
-                    .font(.system(size: 96))
-                    .foregroundStyle(.tint)
-                Text(episode.title)
-                    .font(.title3.weight(.semibold))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(modeStore.current == .bedtime ? .white : .primary)
-                if let level = episode.level {
-                    Text(level.rawValue)
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 3)
-                        .background(Color.accentColor.opacity(0.18))
-                        .clipShape(Capsule())
-                }
-            }
-            .padding(.horizontal)
+        ZStack {
+            backgroundGradient.ignoresSafeArea()
 
-            VStack(spacing: 6) {
-                Slider(
-                    value: Binding(
-                        get: { engine.currentTime },
-                        set: { engine.seek(to: $0) }
-                    ),
-                    in: 0...max(engine.duration, 1)
-                )
-                HStack {
-                    Text(timeString(engine.currentTime))
-                    Spacer()
-                    Text("-" + timeString(max(engine.duration - engine.currentTime, 0)))
+            VStack(spacing: 16) {
+                header.padding(.horizontal, 20).padding(.top, 8)
+                contentArea
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                progressSection.padding(.horizontal, 32)
+                transportControls
+                if let end = engine.sleepEndsAt {
+                    Label("Sleep at \(end.formatted(.dateTime.hour().minute()))",
+                          systemImage: "moon.stars.fill")
+                        .font(.rounded(13, weight: .medium))
+                        .foregroundStyle(fgSoft)
                 }
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(modeStore.current == .bedtime
-                    ? .white.opacity(0.7) : .secondary)
+                Spacer().frame(height: 8)
             }
-            .padding(.horizontal)
-
-            HStack(spacing: 48) {
-                Button { engine.skip(by: -15) } label: {
-                    Image(systemName: "gobackward.15").font(.system(size: 32))
-                }
-                Button { engine.togglePlayPause() } label: {
-                    Image(systemName: engine.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                        .font(.system(size: 72))
-                }
-                Button { engine.skip(by: 15) } label: {
-                    Image(systemName: "goforward.15").font(.system(size: 32))
-                }
-            }
-            .tint(.accentColor)
-
-            if let end = engine.sleepEndsAt {
-                Label {
-                    Text("Sleep at \(end.formatted(.dateTime.hour().minute()))")
-                } icon: {
-                    Image(systemName: "moon.stars.fill")
-                }
-                .font(.caption)
-                .foregroundStyle(modeStore.current == .bedtime
-                    ? .white.opacity(0.7) : .secondary)
-            }
-
-            Spacer()
         }
-        .padding(.top, 24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(modeBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                favoriteButton
-                speedMenu
-                sleepButton
-                transcriptButton
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 16) {
+                    favoriteButton
+                    speedMenu
+                    sleepButton
+                    karaokeToggleButton
+                    reportButton
+                }
             }
         }
         .sheet(isPresented: $showSleepTimer) {
-            SleepTimerSheet(engine: engine)
-                .presentationDetents([.medium])
+            SleepTimerSheet(engine: engine).presentationDetents([.medium])
         }
-        .sheet(isPresented: $showTranscript) {
-            transcriptSheet
+        .alert("Reported", isPresented: $showReportConfirm) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("We'll regenerate this transcript with a more accurate model in a few minutes. Pull to refresh later.")
         }
         .task {
             engine.load(episode: episode, context: context)
-            if modeStore.current == .bedtime && engine.sleepEndsAt == nil {
+            if isBedtime && engine.sleepEndsAt == nil {
                 engine.startSleepTimer(seconds: 30 * 60)
             }
             UIApplication.shared.isIdleTimerDisabled = (modeStore.current == .meal)
+            await loadSegments()
         }
         .onDisappear {
             engine.saveProgress()
@@ -110,12 +70,175 @@ struct PlayerView: View {
         }
     }
 
-    private var modeBackground: Color {
-        switch modeStore.current {
-        case .bedtime: Color(red: 0.05, green: 0.02, blue: 0.0)
-        default:       Color(.systemGroupedBackground)
+    // MARK: - Pieces
+
+    private var header: some View {
+        VStack(spacing: 8) {
+            Text(episode.displayTitle)
+                .font(.rounded(showKaraoke ? 17 : 22, weight: .bold))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(fg)
+                .lineLimit(showKaraoke ? 2 : 3)
+                .animation(.easeInOut(duration: 0.25), value: showKaraoke)
+            if let level = episode.level, !showKaraoke {
+                Text(level.rawValue)
+                    .font(.rounded(13, weight: .bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                    .background(level.tint)
+                    .clipShape(Capsule())
+            }
         }
     }
+
+    @ViewBuilder
+    private var contentArea: some View {
+        if showKaraoke {
+            karaokePane
+        } else {
+            cover
+                .frame(width: 220, height: 220)
+                .padding(.top, 8)
+        }
+    }
+
+    @ViewBuilder
+    private var karaokePane: some View {
+        if !segments.isEmpty {
+            KaraokeView(
+                segments: segments,
+                currentTime: engine.currentTime,
+                onSeek: { engine.seek(to: $0) },
+                isBedtime: isBedtime
+            )
+        } else if loadingTranscript {
+            VStack {
+                Spacer()
+                ProgressView()
+                    .controlSize(.large)
+                    .tint(fg)
+                Text("Loading transcript…")
+                    .font(.rounded(14, weight: .medium))
+                    .foregroundStyle(fgSoft)
+                    .padding(.top, 8)
+                Spacer()
+            }
+        } else {
+            VStack(spacing: 12) {
+                Spacer()
+                Image(systemName: "text.alignleft")
+                    .font(.system(size: 42))
+                    .foregroundStyle(fgSoft)
+                Text("No transcript available yet")
+                    .font(.rounded(14, weight: .medium))
+                    .foregroundStyle(fgSoft)
+                Text("Transcripts are generated overnight on the home server")
+                    .font(.rounded(12))
+                    .foregroundStyle(fgSoft)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+                Spacer()
+            }
+        }
+    }
+
+    private var cover: some View {
+        let tint = episode.level?.tint ?? Color.accentColor
+        return ZStack {
+            RoundedRectangle(cornerRadius: 36, style: .continuous)
+                .fill(LinearGradient(
+                    colors: [tint, tint.opacity(0.7)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                ))
+            RoundedRectangle(cornerRadius: 36, style: .continuous)
+                .fill(.white.opacity(0.08))
+            VStack(spacing: 6) {
+                if let num = episode.displayNumber {
+                    Text(num)
+                        .font(.system(size: 78, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                }
+                if let l = episode.level {
+                    Text(l.rawValue)
+                        .font(.rounded(20, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 4)
+                        .background(.white.opacity(0.25))
+                        .clipShape(Capsule())
+                }
+            }
+        }
+        .shadow(color: tint.opacity(0.45), radius: 24, x: 0, y: 12)
+    }
+
+    private var progressSection: some View {
+        VStack(spacing: 4) {
+            if engine.duration > 1 {
+                Slider(
+                    value: Binding(
+                        get: { min(engine.currentTime, engine.duration) },
+                        set: { engine.seek(to: $0) }
+                    ),
+                    in: 0...engine.duration
+                )
+                .tint(isBedtime ? .white.opacity(0.7) : .accentColor)
+                HStack {
+                    Text(timeString(engine.currentTime))
+                    Spacer()
+                    Text("-" + timeString(max(engine.duration - engine.currentTime, 0)))
+                }
+                .font(.system(size: 12, weight: .semibold, design: .rounded).monospacedDigit())
+                .foregroundStyle(fgSoft)
+            } else {
+                // Duration not yet known (server didn't include it; AVFoundation still loading).
+                // Show only elapsed time and a disabled placeholder bar.
+                Capsule()
+                    .fill(fgSoft.opacity(0.25))
+                    .frame(height: 4)
+                HStack {
+                    Text(timeString(engine.currentTime))
+                    Spacer()
+                    Text("--:--")
+                }
+                .font(.system(size: 12, weight: .semibold, design: .rounded).monospacedDigit())
+                .foregroundStyle(fgSoft)
+            }
+        }
+    }
+
+    private var transportControls: some View {
+        HStack(spacing: 36) {
+            Button { engine.skip(by: -15) } label: {
+                Image(systemName: "gobackward.15")
+                    .font(.system(size: 30, weight: .medium))
+                    .foregroundStyle(fg)
+            }
+            Button { engine.togglePlayPause() } label: {
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(
+                            colors: [Color.accentColor, Color.accentColor.opacity(0.82)],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        ))
+                        .shadow(color: Color.accentColor.opacity(0.45), radius: 14, x: 0, y: 8)
+                    Image(systemName: engine.isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 32, weight: .bold))
+                        .foregroundStyle(.white)
+                        .offset(x: engine.isPlaying ? 0 : 3)
+                }
+                .frame(width: 84, height: 84)
+            }
+            Button { engine.skip(by: 15) } label: {
+                Image(systemName: "goforward.15")
+                    .font(.system(size: 30, weight: .medium))
+                    .foregroundStyle(fg)
+            }
+        }
+    }
+
+    // MARK: - Toolbar buttons
 
     private var favoriteButton: some View {
         Button {
@@ -123,7 +246,7 @@ struct PlayerView: View {
             try? context.save()
         } label: {
             Image(systemName: episode.isFavorite ? "star.fill" : "star")
-                .foregroundStyle(episode.isFavorite ? .yellow : .accentColor)
+                .foregroundStyle(episode.isFavorite ? .yellow : fg)
         }
     }
 
@@ -142,7 +265,7 @@ struct PlayerView: View {
                 }
             }
         } label: {
-            Image(systemName: "speedometer")
+            Image(systemName: "speedometer").foregroundStyle(fg)
         }
     }
 
@@ -151,57 +274,84 @@ struct PlayerView: View {
             showSleepTimer = true
         } label: {
             Image(systemName: engine.sleepEndsAt != nil ? "moon.fill" : "moon")
+                .foregroundStyle(fg)
         }
     }
 
-    private var transcriptButton: some View {
+    private var karaokeToggleButton: some View {
         Button {
-            Task { await loadTranscriptIfNeeded() }
-            showTranscript = true
+            withAnimation(.easeInOut(duration: 0.25)) {
+                showKaraoke.toggle()
+            }
         } label: {
-            Image(systemName: "text.alignleft")
+            Image(systemName: showKaraoke ? "text.alignleft" : "text.alignleft")
+                .foregroundStyle(showKaraoke ? Color.accentColor : fg)
         }
     }
 
-    @ViewBuilder
-    private var transcriptSheet: some View {
-        NavigationStack {
-            if let text = episode.transcriptText, !text.isEmpty {
-                TranscriptView(text: text)
-            } else if loadingTranscript {
-                ProgressView()
-                    .navigationTitle("Transcript")
-                    .navigationBarTitleDisplayMode(.inline)
-            } else {
-                ContentUnavailableView(
-                    "Transcript not available",
-                    systemImage: "text.alignleft",
-                    description: Text(transcriptError ?? "")
-                )
-                .navigationTitle("Transcript")
-                .navigationBarTitleDisplayMode(.inline)
+    private var reportButton: some View {
+        Button {
+            reportBadTranscript()
+        } label: {
+            Image(systemName: "exclamationmark.bubble")
+                .foregroundStyle(fg)
+        }
+    }
+
+    private func reportBadTranscript() {
+        guard let audioURL = episode.audioURL else { return }
+        var payload: [String: Any] = [
+            "episodeID": episode.id,
+            "audioURL": audioURL.absoluteString,
+            "currentTime": engine.currentTime,
+        ]
+        if let t = episode.transcriptURL {
+            payload["transcriptURL"] = t.absoluteString
+        }
+        guard let body = try? JSONSerialization.data(withJSONObject: payload),
+              let baseHost = audioURL.host else { return }
+        var components = URLComponents()
+        components.scheme = audioURL.scheme
+        components.host = baseHost
+        components.port = audioURL.port
+        components.path = "/report"
+        guard let reportURL = components.url else { return }
+        var req = URLRequest(url: reportURL)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = body
+        Task {
+            _ = try? await URLSession.shared.data(for: req)
+            await TranscriptStore.shared.clearCache(for: episode.id)
+            await MainActor.run {
+                showReportConfirm = true
             }
         }
-        .presentationDetents([.large])
     }
 
-    private func loadTranscriptIfNeeded() async {
-        if let t = episode.transcriptText, !t.isEmpty { return }
-        guard let url = episode.pageURL else {
-            transcriptError = "No page URL for this episode"
-            return
+    // MARK: - Background
+
+    private var backgroundGradient: LinearGradient {
+        if isBedtime {
+            return LinearGradient(
+                colors: [Color.bedtimeBgTop, Color.bedtimeBgBottom],
+                startPoint: .top, endPoint: .bottom
+            )
         }
+        let tint = episode.level?.tint ?? Color.accentColor
+        return LinearGradient(
+            colors: [tint.opacity(0.4), Color.appBackground],
+            startPoint: .top, endPoint: .bottom
+        )
+    }
+
+    // MARK: - Loaders
+
+    private func loadSegments() async {
         loadingTranscript = true
         defer { loadingTranscript = false }
-        do {
-            if let text = try await TranscriptFetcher.fetch(pageURL: url) {
-                episode.transcriptText = text
-                try? context.save()
-            } else {
-                transcriptError = "Could not extract transcript"
-            }
-        } catch {
-            transcriptError = error.localizedDescription
+        if let segs = await TranscriptStore.shared.segments(for: episode) {
+            await MainActor.run { self.segments = segs }
         }
     }
 }
