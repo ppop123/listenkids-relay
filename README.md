@@ -1,88 +1,192 @@
-# ListenKids
+# openclaw-relay
 
-> Family iOS app — English listening for a 12-year-old (post-PET, ≈B1) at meal-time and bedtime breaks.
+> A home-server media relay + iOS client for English-listening practice, end-to-end built by Claude Code in a single 24h session.
+>
+> 给家里 12 岁孩子（PET → FCE 区间）做磨耳朵的家用 relay：本地 NAS / Mac mini 当内容枢纽，iOS app 当客户端。
 
-Native SwiftUI universal (iPhone + iPad), no backend, content pulled directly from the [Practising English](https://www.practisingenglish.com/) podcast feed.
+---
 
-## Features
+## What it does
 
-- **Library** — episodes auto-pulled from [feeds.buzzsprout.com/1783332.rss](https://feeds.buzzsprout.com/1783332.rss); difficulty (A2 / B1 / B2 / C1) parsed from each title
-- **Filter bar** — by level, by length (Short ≤10min / Medium 10–20min / Long >20min)
-- **Continue listening** — picks up where you stopped, on either device
-- **Background audio** — lock-screen / control-center / AirPods skip ±15s, play/pause
-- **Offline downloads** — `URLSession.background` keeps downloading even if the app closes
-- **Transcript** — fetched from each episode's page on practisingenglish.com (SwiftSoup), shown in a large-font reading view; long-press any word for the system Look Up dictionary
-- **Speed** — 0.8× / 1.0× / 1.2×
-- **Sleep timer** — 10 / 20 / 30 / 45 min, fades out before pausing
-- **Modes** — three states, persisted across launches:
-  - **Free (∞)** — no filtering
-  - **Meal (🍴)** — auto-filters episodes ≤15 min, screen stays awake during playback
-  - **Bedtime (🌙)** — auto-filters episodes ≥15 min, opens with a 30-min sleep timer, dim warm background in player
-- **Favorites + History** — swipe-right on any row to favorite; History lists everything you've started
-- **iCloud sync** — progress / favorites travel between iPhone and iPad via SwiftData + CloudKit
-- **i18n** — UI follows system language (English / 简体中文)
+- Pulls long-form story audio from multiple sources — **Practising English** podcast (RSS), **Roald Dahl** audiobooks (rsync from NAS), **Storynory** (RSS), **LibriVox** public-domain classics (API) — into a single library on a home Mac mini.
+- Auto-classifies every item by **CEFR level (A2 / B1 / B2 / C1)** and **kind (story / lesson / exam)**. The iOS home screen surfaces only narrative listening; tutorial podcasts are tucked away.
+- Auto-transcribes every mp3 to **segment-level timestamps** via `mlx-whisper`, driving a karaoke-style scrolling subtitle in-app.
+- One-tap *"subtitle out of sync"* report from the iOS app → daemon picks the file up and retranscribes it with a heavier model → next launch shows the fix. Quality loop fully driven by the kid using the app.
+- Generates missing cover art via `doubao-seedream`. Unified cozy hand-drawn style across all sources.
+- iPhone + iPad **universal SwiftUI app**, mode-aware (Free / Meal / Bedtime), karaoke transcripts, sleep timer, offline downloads, iCloud progress sync between devices.
+- Reachable from outside the house via Cloudflare Tunnel — same URL whether on home Wi-Fi or cellular.
 
-## Project layout
+## Why
+
+Off-the-shelf podcast clients are content-agnostic and have no concept of CEFR difficulty or "story vs lesson". Off-the-shelf English-learning apps are grammar-heavy and bad at narrative listening. A 12-year-old working PET → FCE wants real stories during meals or before sleep, with a safety net when an unfamiliar word lands.
+
+This is the kind of hyperpersonalized "app for my one kid" project that's economically nonviable as a SaaS — but trivial when an LLM agent does the labor end-to-end.
+
+## Architecture
 
 ```
-ListenKids/
-├── App/                          # @main + DownloadManager bootstrap
-├── Models/                       # Episode, Level, LengthBucket, AppMode
-├── Sources/                      # ContentSource protocol + PractisingEnglish + RSS/Transcript fetchers
-├── Player/                       # AVPlayer engine, audio session, lock-screen
-├── Persistence/                  # SwiftData sync / dedupe
-├── Downloads/                    # URLSession.background manager
-├── Views/
-│   ├── Home/                     # HomeView (filter + library + continue)
-│   ├── Library/                  # FilterBar, FavoritesView, HistoryView
-│   ├── Downloads/                # DownloadsView
-│   ├── Player/                   # PlayerView, TranscriptView, SleepTimerSheet
-│   ├── Common/                   # EpisodeRow, ModeSwitcher, CircularProgressView
-│   └── ContentView.swift         # TabView root
-└── Resources/
-    └── Localizable.xcstrings     # en + zh-Hans
+                     ┌────────────────────────────────────┐
+                     │       Mac mini (home relay)        │
+   PE Podcast RSS ─▶ │ sync.py        ─┐                  │
+   Roald Dahl rsync ▶│ fetch_storynory  │                  │
+   Storynory   RSS ▶ │ fetch_librivox   │                  │
+   LibriVox    API ▶ │                  ▼                  │
+                     │             ~/listenkids/           │
+                     │              ├ audio/               │
+                     │              ├ audio_storynory/     │
+                     │              ├ series/{dahl,librivox}│
+                     │              └ transcripts/         │
+                     │                                     │
+                     │ mlx-whisper (small.en / medium.en)  │
+                     │   ─▶ JSON segments + timestamps     │
+                     │                                     │
+                     │ organize.py ─▶ manifest.json        │
+                     │   (level + kind + series grouping)  │
+                     │                                     │
+                     │ serve.py (port 18000)               │
+                     │   ├ GET   /  static files           │
+                     │   └ POST  /report  bad transcript   │
+                     │                                     │
+                     │ retranscribe.py daemon              │
+                     │   tails bad_transcripts.log         │
+                     │   re-runs Whisper with bigger model │
+                     └─────────────────┬───────────────────┘
+                                       │ HTTP (LAN)  /
+                                       │ Cloudflare Tunnel (anywhere)
+                                       ▼
+                     ┌────────────────────────────────────┐
+                     │      iOS app  (SwiftUI · iOS 17+)   │
+                     │                                     │
+                     │   HomeView   carousels by source    │
+                     │   CollectionDetailView              │
+                     │   PlayerView + KaraokeView          │
+                     │   DownloadsView (offline)           │
+                     │   FavoritesView · HistoryView       │
+                     │                                     │
+                     │   PlayerEngine  singleton AVPlayer  │
+                     │   SwiftData + CloudKit progress     │
+                     │   AVAudioSession bg audio           │
+                     │   MPNowPlayingInfoCenter lock screen│
+                     └────────────────────────────────────┘
 ```
 
-## Setup
+## Numbers (current state)
+
+| | |
+|---|---|
+| Audio files mirrored | **866** |
+| Transcript segments | **~28 000** |
+| Series (Dahl + LibriVox + PE) | **63** |
+| Standalone story episodes | **327** |
+| Series with cover art | **57 / 57** (23 originals + 34 generated) |
+| Real devices auto-deployed | **3** (iPad Pro · iPhone 17 Pro · iPhone 15 Pro) |
+| Sources connected | **4** (Practising English, Roald Dahl, Storynory, LibriVox) |
+| Time from empty repo to working device | **~24h** in one Claude Code session |
+
+## Why it's interesting (the agent angle)
+
+Everything here was assembled by **[Claude Code](https://www.anthropic.com/claude/code)** — Swift / SwiftUI / SwiftData iOS code, Python relay scripts, mlx-whisper ASR pipeline, doubao-seedream image generation, xcodegen + xcodebuild + devicectl real-device sign-and-install — all in one continuous session.
+
+- **Long-chain reasoning across stacks** — debugging Xcode signing while restarting transcription daemons while regenerating cover art, all in the same loop.
+- **Multi-agent collaboration** — Claude Code as the orchestrator, calling `mlx-whisper`, `doubao-seedream`, dictionary APIs, etc., as specialized subagents.
+- **Honest user-driven quality loop** — the user (a kid) reports "字幕不准" through a `exclamationmark.bubble` button; the server retranscribes; the client invalidates cache. No ML-ops engineer in the middle.
+
+## Repository layout
+
+```
+.
+├── README.md                          ← this file
+├── project.yml                        ← xcodegen project definition
+├── ListenKids/                        ← iOS app source (SwiftUI)
+│   ├── App/
+│   ├── Models/
+│   ├── Sources/                       ← ContentSource protocol + ManifestSource
+│   ├── Player/                        ← AVPlayer wrapper, audio session, lock screen
+│   ├── Persistence/
+│   ├── Downloads/
+│   ├── Views/                         ← Home / Player / Library / Downloads / Common
+│   └── Resources/Localizable.xcstrings
+├── server/                            ← Mac mini relay scripts
+│   ├── sync.py                        ← Practising English podcast RSS → audio + feed.xml
+│   ├── fetch_storynory.py             ← Storynory RSS → audio_storynory/
+│   ├── fetch_librivox.py              ← LibriVox API → series/librivox/<book>/
+│   ├── organize.py                    ← scans everything → manifest.json (with level + kind)
+│   ├── transcribe.py                  ← mlx-whisper backfill (small.en default)
+│   ├── retranscribe.py                ← daemon: medium.en repair driven by app reports
+│   ├── serve.py                       ← Python http.server + POST /report
+│   ├── gen_covers.py                  ← doubao-seedream cover generator
+│   └── README.md                      ← server-side quick start
+└── docs/plans/                        ← planning docs
+```
+
+## Quick start
 
 ```bash
-brew install xcodegen   # if not already
+# 1. Home server (Mac mini with Apple Silicon recommended for mlx-whisper)
+git clone https://github.com/ppop123/openclaw-relay
+cd openclaw-relay/server
+
+# Install once (assumes Homebrew + Python 3.9+; mlx-whisper needs Apple Silicon):
+brew install ffmpeg
+python3 -m pip install mlx-whisper
+
+python3 sync.py             # pull Practising English podcast + mp3
+python3 fetch_storynory.py  # pull Storynory
+python3 fetch_librivox.py   # pull selected LibriVox classics
+# rsync your Roald Dahl audiobooks into ~/listenkids/series/roald-dahl/
+
+python3 transcribe.py &           # mlx-whisper backfill (small.en)
+python3 serve.py        &         # static + /report endpoint
+python3 retranscribe.py &         # quality-repair daemon
+python3 organize.py               # build manifest.json (run after fetches)
+
+# Optional: cloudflared tunnel to expose port 18000 to a public hostname.
+
+# 2. iOS app (any Mac with Xcode 15+)
+cd ../
+brew install xcodegen
 xcodegen generate
 open ListenKids.xcodeproj
+# Edit ListenKids/Sources/ManifestSource.swift if your relay isn't 192.168.50.8
+# Pick your team in Signing & Capabilities, ⌘R to run on device.
 ```
 
-In Xcode, open *Signing & Capabilities* and pick your paid Apple Developer team. The bundle identifier is `com.simiaowang.listenkids` and the iCloud container is `iCloud.com.simiaowang.listenkids` — both can be changed by editing `project.yml` and `ListenKids/ListenKids.entitlements`, then re-running `xcodegen generate`.
+## Configuration
 
-Then ⌘-R to run on a simulator, or pick your iPhone / iPad from the run-destination menu and ⌘-R to run on device. First launch on device will prompt for microphone-free background audio permission (granted automatically because of `UIBackgroundModes = audio`).
+Hardcoded values you'll likely want to edit before running:
 
-## Putting it on the kid's iPhone / iPad
+- `ListenKids/Sources/ManifestSource.swift` — `baseURL` (default `http://192.168.50.8:18000`)
+- `project.yml` — `PRODUCT_BUNDLE_IDENTIFIER`, `DEVELOPMENT_TEAM`
+- `server/*.py` — `LK_PUBLIC` env var (default `http://192.168.50.8:18000`)
+- `server/gen_covers.py` — `VOLCANO_API_KEY` env var (only needed if you want to regenerate covers)
 
-Easiest: **TestFlight**.
+## Tech stack
 
-1. In Xcode: *Product → Archive* → *Distribute App* → *App Store Connect* → *Upload*. Wait a few minutes for processing.
-2. In [App Store Connect](https://appstoreconnect.apple.com), add the kid's Apple ID as an *Internal Tester* under TestFlight for ListenKids.
-3. They install TestFlight on their device, accept the invite email, and tap *Install*.
+- **iOS** — Swift 6 / SwiftUI / SwiftData / AVFoundation / iOS 17+ / xcodegen
+- **Server** — Python 3, [mlx-whisper](https://github.com/ml-explore/mlx-examples) (Apple Silicon), ffmpeg, stdlib `http.server` (no nginx needed for one-family scale)
+- **AI** — mlx-whisper (`small.en` / `medium.en`), doubao-seedream-5 (cover art)
+- **Distribution** — LAN HTTP for in-house, Cloudflare Tunnel for anywhere
+- **Built by** — [Claude Code](https://www.anthropic.com/claude/code), Anthropic's coding agent
 
-Re-deploy by archiving and re-uploading; testers get the new build automatically.
+## Roadmap
 
-For one-off device installs (no TestFlight account churn): Xcode → pick the connected device as run destination → ⌘-R. The app stays installed for 7 days (free profile) or 1 year (paid Developer account).
+- [x] Multi-source content aggregation
+- [x] Whisper-driven karaoke subtitles + user-reported repair loop
+- [x] iPhone + iPad universal UI with NavigationSplitView on iPad
+- [x] Offline downloads + iCloud progress sync
+- [x] Auto cover-art generation for missing series
+- [ ] Vocabulary game module (words from listened transcripts → SM-2 spaced repetition + 4 mini-game modes)
+- [ ] More LibriVox titles (Treasure Island, Charlotte's Web, Narnia if licensable, etc.)
+- [ ] Parent dashboard — listening minutes, words mastered, level progression
 
-## Add another content source
+## License
 
-The `ContentSource` protocol in [`Sources/ContentSource.swift`](ListenKids/Sources/ContentSource.swift) is one method:
+MIT.
 
-```swift
-protocol ContentSource: Sendable {
-    var sourceID: String { get }
-    var displayName: String { get }
-    func fetchEpisodes() async throws -> [FetchedEpisode]
-}
-```
+## Acknowledgments
 
-Implement it in a new file under `ListenKids/Sources/`, then call it from `EpisodeSync.refresh(...)` (currently hard-codes `PractisingEnglish()`). Each source's `sourceID` namespaces its episodes in SwiftData, so two sources with overlapping GUIDs won't collide.
-
-If the next source isn't a podcast RSS feed (e.g. a JSON API), the protocol is intentionally minimal so you can fetch and shape into `FetchedEpisode` however you like. `PractisingEnglish.swift` is a working reference for the RSS + iTunes-namespace case.
-
-## Plan
-
-The full implementation plan, including milestones M1–M5 and out-of-scope decisions, lives in [docs/plans/2026-04-27-kids-listening-ios.md](docs/plans/2026-04-27-kids-listening-ios.md).
+- [Practising English](https://www.practisingenglish.com/) — Mike Bilbrough's free B1-B2 ESL podcast
+- [Storynory](https://www.storynory.com/) — free audio stories for kids
+- [LibriVox](https://librivox.org/) — public-domain audiobooks
+- The Roald Dahl audiobook narrators — Eric Idle, Geoffrey Palmer, Stephen Fry, Hugh Laurie, Andrew Sachs, Timothy West, June Whitfield, Miriam Margolyes, Simon Callow, Alan Cumming
+- [mlx-whisper](https://github.com/ml-explore/mlx-examples), [Anthropic Claude Code](https://www.anthropic.com/claude/code), [doubao-seedream](https://www.volcengine.com/)

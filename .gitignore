@@ -19,3 +19,18 @@ Package.resolved
 # Local config
 *.local
 .env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Server runtime artifacts (only on the relay, but keep .gitignore defensive)
+server/audio/
+server/audio_storynory/
+server/series/
+server/transcripts/
+server/*.log
+server/*.json
+server/.duration_cache.json
+server/feed.xml
