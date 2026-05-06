@@ -116,7 +116,9 @@ for query, level in BOOK_LIST:
     for i, ch in enumerate(chapters, 1):
         url = ch["url"]
         ext = os.path.splitext(urllib.parse.urlparse(url).path)[1] or ".mp3"
-        fname = f"{i:02d}{ext}"
+        # Prefix with book slug so transcript filenames don't collide across books
+        # (transcribe.py uses the mp3 basename to derive the transcript path).
+        fname = f"{book_slug}-{i:02d}{ext}"
         dest = os.path.join(book_dir, fname)
         download(url, dest)
         parts.append({
