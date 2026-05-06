@@ -226,6 +226,49 @@ def dahl_level(title_lower):
     return "B1"
 
 
+def collect_bilibili():
+    base = os.path.join(SERIES_DIR, "bilibili")
+    if not os.path.isdir(base):
+        return []
+    out = []
+    for slug in sorted(os.listdir(base)):
+        book_dir = os.path.join(base, slug)
+        manifest_path = os.path.join(book_dir, "manifest.json")
+        if not os.path.isfile(manifest_path):
+            continue
+        try:
+            mf = json.load(open(manifest_path, "r", encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        parts = []
+        for ch in mf.get("chapters", []):
+            fname = ch.get("filename")
+            if not fname:
+                continue
+            local = os.path.join(book_dir, fname)
+            if not os.path.exists(local):
+                continue
+            parts.append({
+                "id": f"bilibili/{slug}/{ch['partNumber']:03d}",
+                "partNumber": ch["partNumber"],
+                "title": ch.get("title") or f"Episode {ch['partNumber']}",
+                "audioURL": f"{PUBLIC_BASE}/{url_path('series', 'bilibili', slug, fname)}",
+                "durationSeconds": probe_duration(local),
+            })
+        if not parts:
+            continue
+        out.append({
+            "id": f"bilibili/{slug}",
+            "sourceID": "bilibili",
+            "title": mf.get("title", slug),
+            "author": mf.get("author"),
+            "level": mf.get("level"),
+            "cover": None,
+            "parts": parts,
+        })
+    return out
+
+
 def collect_librivox():
     base = os.path.join(SERIES_DIR, "librivox")
     if not os.path.isdir(base):
@@ -412,12 +455,13 @@ def main():
 
     dahl_series = collect_dahl()
     librivox_series = collect_librivox()
+    bilibili_series = collect_bilibili()
     storynory_eps = collect_storynory_episodes()
 
     manifest = {
         "version": 1,
         "publicBase": PUBLIC_BASE,
-        "series": dahl_series + librivox_series + list(pe_series_map.values()),
+        "series": dahl_series + bilibili_series + librivox_series + list(pe_series_map.values()),
         "episodes": pe_standalone + storynory_eps,
     }
 
@@ -429,7 +473,7 @@ def main():
     _save_duration_cache()
     print(
         f"wrote {MANIFEST}: "
-        f"{len(manifest['series'])} series ({len(dahl_series)} dahl + {len(librivox_series)} librivox + {len(pe_series_map)} pe), "
+        f"{len(manifest['series'])} series ({len(dahl_series)} dahl + {len(bilibili_series)} bilibili + {len(librivox_series)} librivox + {len(pe_series_map)} pe), "
         f"{len(manifest['episodes'])} standalone ({len(pe_standalone)} pe + {len(storynory_eps)} storynory)",
         file=sys.stderr,
     )
