@@ -257,13 +257,18 @@ def collect_bilibili():
             })
         if not parts:
             continue
+        cover_url = None
+        for f in sorted(os.listdir(book_dir)):
+            if f.lower() in ("cover.png", "cover.jpg", "cover.jpeg"):
+                cover_url = f"{PUBLIC_BASE}/{url_path('series', 'bilibili', slug, f)}"
+                break
         out.append({
             "id": f"bilibili/{slug}",
             "sourceID": "bilibili",
             "title": mf.get("title", slug),
             "author": mf.get("author"),
             "level": mf.get("level"),
-            "cover": None,
+            "cover": cover_url,
             "parts": parts,
         })
     return out

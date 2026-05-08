@@ -74,14 +74,20 @@ This is the kind of hyperpersonalized "app for my one kid" project that's econom
 
 | | |
 |---|---|
-| Audio files mirrored | **866** |
-| Transcript segments | **~28 000** |
-| Series (Dahl + LibriVox + PE) | **63** |
-| Standalone story episodes | **327** |
-| Series with cover art | **57 / 57** (23 originals + 34 generated) |
+| Audio files mirrored | **1 270** |
+| Total runtime | **~414 hours** |
+| Series (Dahl + Bilibili + LibriVox + PE) | **71** (32 + 5 + 9 + 25) |
+| Standalone story episodes | **327** (267 PE + 60 Storynory) |
+| Series with cover art | **71 / 71** (23 originals + 48 doubao-generated) |
 | Real devices auto-deployed | **3** (iPad Pro · iPhone 17 Pro · iPhone 15 Pro) |
-| Sources connected | **4** (Practising English, Roald Dahl, Storynory, LibriVox) |
-| Time from empty repo to working device | **~24h** in one Claude Code session |
+| Sources connected | **5** (Practising English, Roald Dahl, Storynory, LibriVox, Bilibili) |
+| Time from empty repo to multi-source device | **~28h** across two Claude Code sessions |
+
+The Bilibili source uses `yt-dlp` to extract audio-only from anthology
+videos — Stephen Fry's full 7-book Harry Potter (200 chapters), Charlotte's
+Web, Magic School Bus 52 episodes, Horrid Henry, and The Worst Witch — and
+refreshes chapter titles from Bilibili's web-view API so the UI shows real
+chapter names instead of `p1 / p2 / ...`.
 
 ## Why it's interesting (the agent angle)
 
@@ -110,12 +116,17 @@ Everything here was assembled by **[Claude Code](https://www.anthropic.com/claud
 │   ├── sync.py                        ← Practising English podcast RSS → audio + feed.xml
 │   ├── fetch_storynory.py             ← Storynory RSS → audio_storynory/
 │   ├── fetch_librivox.py              ← LibriVox API → series/librivox/<book>/
+│   ├── fetch_bilibili.py              ← yt-dlp Bilibili audio → series/bilibili/<slug>/
+│   ├── update_bilibili_titles.py      ← refresh chapter titles from B站 web-view API
 │   ├── organize.py                    ← scans everything → manifest.json (with level + kind)
 │   ├── transcribe.py                  ← mlx-whisper backfill (small.en default)
 │   ├── retranscribe.py                ← daemon: medium.en repair driven by app reports
 │   ├── serve.py                       ← Python http.server + POST /report
 │   ├── gen_covers.py                  ← doubao-seedream cover generator
 │   └── README.md                      ← server-side quick start
+├── docs/
+│   ├── STATE.md                       ← current full-system state snapshot
+│   └── plans/                         ← planning docs
 └── docs/plans/                        ← planning docs
 ```
 
@@ -175,9 +186,14 @@ Hardcoded values you'll likely want to edit before running:
 - [x] iPhone + iPad universal UI with NavigationSplitView on iPad
 - [x] Offline downloads + iCloud progress sync
 - [x] Auto cover-art generation for missing series
+- [x] Bilibili source via yt-dlp (Stephen Fry HP, Charlotte's Web, Magic School Bus, Horrid Henry, Worst Witch)
+- [x] Story-vs-lesson classification — only narrative listening surfaces on home
+- [ ] launchd plists so serve / retranscribe / transcribe survive Mac mini reboots
+- [ ] Cloudflare Tunnel for outside-the-house access
 - [ ] Vocabulary game module (words from listened transcripts → SM-2 spaced repetition + 4 mini-game modes)
-- [ ] More LibriVox titles (Treasure Island, Charlotte's Web, Narnia if licensable, etc.)
+- [ ] PlayerView blur cover background (Apple Music style)
 - [ ] Parent dashboard — listening minutes, words mastered, level progression
+- [ ] Backfill missing HP Book-7 chapter names (Bilibili UP labelled them `fry_7_NN`)
 
 ## License
 
