@@ -7,7 +7,7 @@ import json, os, re, subprocess, sys
 
 ROOT = os.path.expanduser("~/listenkids")
 SERIES_DIR = os.path.join(ROOT, "series", "bilibili")
-PUBLIC_BASE = os.environ.get("LK_PUBLIC", "http://192.168.50.8:18000")
+PUBLIC_BASE = os.environ.get("LK_PUBLIC", "http://192.168.50.9:18000")
 
 # (bvid, slug, title, level, author)
 BILIBILI_LIST = [

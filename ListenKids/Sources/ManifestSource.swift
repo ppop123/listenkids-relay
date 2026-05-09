@@ -8,7 +8,7 @@ struct ManifestSource: ContentSource {
     let displayName = "ListenKids Library"
     let manifestURL: URL
 
-    init(baseURL: URL = URL(string: "http://192.168.50.8:18000")!) {
+    init(baseURL: URL = URL(string: "http://192.168.50.9:18000")!) {
         self.manifestURL = baseURL.appendingPathComponent("manifest.json")
     }
 

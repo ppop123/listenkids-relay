@@ -21,7 +21,7 @@ MODEL = "doubao-seedream-5-0-260128"
 SIZE = "2048x2048"  # API requires >= 1920x1920 for square
 MANIFEST_URL = os.environ.get(
     "LK_MANIFEST_URL",
-    "http://192.168.50.8:18000/manifest.json",
+    "http://192.168.50.9:18000/manifest.json",
 )
 OUT_DIR = os.environ.get("LK_COVER_OUT", "/tmp/lk_covers")
 

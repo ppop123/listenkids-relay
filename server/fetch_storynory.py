@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 ROOT = os.path.expanduser("~/listenkids")
 SOURCE = "https://www.storynory.com/feeds/stories/"
-PUBLIC_BASE = os.environ.get("LK_PUBLIC", "http://192.168.50.8:18000")
+PUBLIC_BASE = os.environ.get("LK_PUBLIC", "http://192.168.50.9:18000")
 AUDIO_DIR = os.path.join(ROOT, "audio_storynory")
 META_FILE = os.path.join(ROOT, "storynory.json")
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"

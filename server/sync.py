@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 SOURCE = os.environ.get("LK_SOURCE", "https://feeds.buzzsprout.com/1783332.rss")
 ROOT = os.environ.get("LK_ROOT", os.path.expanduser("~/listenkids"))
-PUBLIC_BASE = os.environ.get("LK_PUBLIC", "http://192.168.50.8:18000")
+PUBLIC_BASE = os.environ.get("LK_PUBLIC", "http://192.168.50.9:18000")
 
 AUDIO_DIR = os.path.join(ROOT, "audio")
 FEED_OUT = os.path.join(ROOT, "feed.xml")

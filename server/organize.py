@@ -56,7 +56,7 @@ def url_path(*parts):
     return "/".join(urllib.parse.quote(p, safe="") for p in parts)
 
 ROOT = os.path.expanduser("~/listenkids")
-PUBLIC_BASE = os.environ.get("LK_PUBLIC", "http://192.168.50.8:18000")
+PUBLIC_BASE = os.environ.get("LK_PUBLIC", "http://192.168.50.9:18000")
 FEED = os.path.join(ROOT, "feed.xml")
 SERIES_DIR = os.path.join(ROOT, "series")
 MANIFEST = os.path.join(ROOT, "manifest.json")
