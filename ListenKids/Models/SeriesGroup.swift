@@ -9,6 +9,7 @@ struct SeriesGroup: Identifiable, Hashable {
     let level: Level?
     let coverURL: URL?
     let sourceID: String
+    let popularity: Int
     let episodes: [Episode]
 
     var totalDurationSeconds: Int {
@@ -44,6 +45,7 @@ extension Array where Element == Episode {
                 level: first.level,
                 coverURL: first.seriesCoverURL,
                 sourceID: first.sourceID,
+                popularity: first.seriesPopularity ?? 0,
                 episodes: eps.sorted { ($0.partNumber ?? 0) < ($1.partNumber ?? 0) }
             )
         }

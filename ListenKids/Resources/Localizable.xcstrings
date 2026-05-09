@@ -537,6 +537,20 @@
         }
       }
     },
+    "Bilibili" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bilibili" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Bilibili" } }
+      }
+    },
+    "LibriVox Classics" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "LibriVox Classics" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "LibriVox 经典" } }
+      }
+    },
     "Roald Dahl" : {
       "extractionState" : "manual",
       "localizations" : {

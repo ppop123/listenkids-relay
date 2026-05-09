@@ -39,6 +39,7 @@ struct ManifestSource: ContentSource {
                     partTotal: total,
                     seriesAuthor: s.author,
                     seriesCoverURL: coverURL,
+                    seriesPopularity: s.popularity,
                     kind: "story"
                 ))
             }
@@ -63,6 +64,7 @@ struct ManifestSource: ContentSource {
                 partTotal: nil,
                 seriesAuthor: nil,
                 seriesCoverURL: nil,
+                seriesPopularity: nil,
                 kind: ep.kind ?? "story"
             ))
         }
@@ -87,6 +89,7 @@ private struct SeriesItem: Decodable {
     let author: String?
     let level: String?
     let cover: String?
+    let popularity: Int?
     let parts: [PartItem]
 }
 

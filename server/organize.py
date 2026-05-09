@@ -192,6 +192,40 @@ def classify_episode(title):
     return "story"
 
 
+# --- Popularity scoring (0..100, higher = surfaces first on home) ---
+
+DAHL_POPULARITY = {
+    "matilda": 100, "charlie and the chocolate factory": 95, "the bfg": 90,
+    "the witches": 88, "james and the giant peach": 85, "fantastic mr fox": 82,
+    "revolting rhymes": 78, "the twits": 75,
+    "charlie and the great glass elevator": 72, "danny the champion": 70,
+    "george": 68, "boy": 65, "going solo": 62, "the magic finger": 58,
+    "the enormous crocodile": 56, "esio trot": 55, "henry sugar": 54,
+    "the giraffe and the pelly": 52, "billy and the minpins": 50,
+    "tales of the unexpected": 48, "switch bitch": 42, "over to you": 38,
+    "someone like you": 38, "collins theatre": 35,
+}
+
+BILIBILI_POPULARITY = {
+    "magic-school-bus": 100, "harry-potter-stephen-fry": 95,
+    "charlottes-web": 85, "worst-witch": 80, "horrid-henry": 70,
+}
+
+LIBRIVOX_POPULARITY = {
+    "alice-s-adventures-in-wonderland": 92, "peter-pan": 90,
+    "the-wonderful-wizard-of-oz": 85, "anne-of-green-gables": 82,
+    "wind-in-the-willows": 80, "the-secret-garden": 80, "heidi": 76,
+    "black-beauty": 72, "a-little-princess": 70, "five-children-and-it": 60,
+}
+
+
+def dahl_popularity(title_lower):
+    for key, score in DAHL_POPULARITY.items():
+        if key in title_lower:
+            return score
+    return 40
+
+
 DAHL_LEVELS = {
     "billy and the minpins": "B1",
     "charlie and the chocolate factory": "B1",
@@ -269,6 +303,7 @@ def collect_bilibili():
             "author": mf.get("author"),
             "level": mf.get("level"),
             "cover": cover_url,
+            "popularity": BILIBILI_POPULARITY.get(slug, 50),
             "parts": parts,
         })
     return out
@@ -310,6 +345,7 @@ def collect_librivox():
             "author": mf.get("author"),
             "level": mf.get("level"),
             "cover": None,
+            "popularity": LIBRIVOX_POPULARITY.get(slug, 50),
             "parts": parts,
         })
     return out
@@ -396,6 +432,7 @@ def collect_dahl():
             "author": "Roald Dahl",
             "level": dahl_level(clean_name.lower()),
             "cover": cover_url,
+            "popularity": dahl_popularity(clean_name.lower()),
             "parts": parts,
         })
     return series
@@ -448,6 +485,7 @@ def main():
             })
     for s in pe_series_map.values():
         s["parts"].sort(key=lambda p: (p["partNumber"] or 0))
+        s["popularity"] = min(100, len(s["parts"]) * 10)
     # Attach generated cover for PE series (stored under series/practising-english/<slug>/)
     for sid, s in pe_series_map.items():
         slug = sid.split("/", 1)[1]

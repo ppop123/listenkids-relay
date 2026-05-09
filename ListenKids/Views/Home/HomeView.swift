@@ -129,18 +129,27 @@ struct HomeView: View {
     }
 
     private var seriesGroups: [(titleKey: String, list: [SeriesGroup])] {
-        let dahl = grouped.series
-            .filter { $0.sourceID == "roald-dahl" }
+        let buckets: [(String, [SeriesGroup])] = [
+            ("Roald Dahl",                  pickFor("roald-dahl")),
+            ("Bilibili",                    pickFor("bilibili")),
+            ("LibriVox Classics",           pickFor("librivox")),
+            ("Practising English Stories",  pickFor("practising-english")),
+        ]
+        return buckets
+            .filter { !$0.1.isEmpty }
+            .map { (titleKey: $0.0, list: $0.1) }
+    }
+
+    /// Filter by source + current mode, then sort by popularity (DESC) so the
+    /// best-known stories surface first; ties broken by title alpha for stability.
+    private func pickFor(_ sourceID: String) -> [SeriesGroup] {
+        grouped.series
+            .filter { $0.sourceID == sourceID }
             .filter { modeAccepts($0) }
-            .sorted { $0.title < $1.title }
-        let pe = grouped.series
-            .filter { $0.sourceID == "practising-english" }
-            .filter { modeAccepts($0) }
-            .sorted { $0.title < $1.title }
-        var out: [(titleKey: String, list: [SeriesGroup])] = []
-        if !dahl.isEmpty { out.append(("Roald Dahl", dahl)) }
-        if !pe.isEmpty { out.append(("Practising English Stories", pe)) }
-        return out
+            .sorted { (a, b) in
+                if a.popularity != b.popularity { return a.popularity > b.popularity }
+                return a.title < b.title
+            }
     }
 
     private var filteredStandalone: [Episode] {

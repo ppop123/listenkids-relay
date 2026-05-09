@@ -28,6 +28,7 @@ final class Episode {
     var partTotal: Int?
     var seriesAuthor: String?
     var seriesCoverURL: URL?
+    var seriesPopularity: Int?
 
     /// Server-side classification: "story" (default for narrative listening),
     /// "lesson" (grammar / vocab tutorial), "exam" (exam prep).

@@ -23,5 +23,6 @@ struct FetchedEpisode: Sendable {
     var partTotal: Int?
     var seriesAuthor: String?
     var seriesCoverURL: URL?
+    var seriesPopularity: Int?
     var kind: String?
 }

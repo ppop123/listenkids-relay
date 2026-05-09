@@ -34,6 +34,7 @@ enum EpisodeSync {
                 ep.partTotal = f.partTotal
                 ep.seriesAuthor = f.seriesAuthor
                 ep.seriesCoverURL = f.seriesCoverURL
+                ep.seriesPopularity = f.seriesPopularity
                 ep.kind = f.kind
             }
             try? context.save()
