@@ -14,8 +14,13 @@ actor TranscriptStore {
     func segments(for episode: Episode) async -> [TranscriptSegment]? {
         if let cached = cache[episode.id] { return cached }
         guard let url = transcriptURL(for: episode) else { return nil }
+        // Bypass URLSession's local cache — the relay overwrites a transcript
+        // when the kid taps "report bad subtitle", and we don't want a stale
+        // 404 (or stale body) to mask the freshly-generated JSON.
+        var req = URLRequest(url: url)
+        req.cachePolicy = .reloadIgnoringLocalCacheData
         do {
-            let (data, response) = try await URLSession.shared.data(from: url)
+            let (data, response) = try await URLSession.shared.data(for: req)
             guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
                 return nil
             }

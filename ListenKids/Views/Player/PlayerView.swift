@@ -325,6 +325,20 @@ struct PlayerView: View {
             await TranscriptStore.shared.clearCache(for: episode.id)
             await MainActor.run {
                 showReportConfirm = true
+                // Wipe the in-memory segments so KaraokeView shows the
+                // placeholder ("regenerating…") instead of stale text.
+                self.segments = []
+            }
+            // Poll for the regenerated transcript: retranscribe with medium.en
+            // takes 1-3 minutes for typical chapter lengths. Retry a handful
+            // of times so the new subtitles appear without the user having
+            // to back out of PlayerView.
+            for delay in [45, 90, 180] {
+                try? await Task.sleep(nanoseconds: UInt64(delay) * 1_000_000_000)
+                if let segs = await TranscriptStore.shared.segments(for: episode), !segs.isEmpty {
+                    await MainActor.run { self.segments = segs }
+                    return
+                }
             }
         }
     }
